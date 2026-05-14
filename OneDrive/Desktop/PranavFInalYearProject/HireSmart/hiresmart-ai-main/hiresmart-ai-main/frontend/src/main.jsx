@@ -9,7 +9,7 @@ return <div><header><h1>HireSmart AI</h1>
 
 <footer className="footer">
   <p>
-    Developed with ❤️ by <span>Pranav Peherkar</span>
+    Developed by <span>Pranav Peherkar</span>
   </p>
 </footer>
 
