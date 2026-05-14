@@ -1,0 +1,1 @@
+{"scripts":{"dev":"node src/server.js","start":"node src/server.js"},"dependencies":{"axios":"latest","bcryptjs":"latest","cors":"latest","dotenv":"latest","express":"latest","jsonwebtoken":"latest","mongoose":"latest","multer":"latest","pdf-parse":"latest","pdfjs-dist":"^3.11.174"}}
