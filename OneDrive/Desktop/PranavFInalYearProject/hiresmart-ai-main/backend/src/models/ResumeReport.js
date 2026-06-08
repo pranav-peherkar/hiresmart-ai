@@ -1,0 +1,1 @@
+const mongoose=require('mongoose');module.exports=mongoose.model('ResumeReport',new mongoose.Schema({filename:String,jobDescription:String,atsScore:Number,skills:[String],missingSkills:[String],suggestions:[String]},{timestamps:true}));
