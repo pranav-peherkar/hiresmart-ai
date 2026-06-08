@@ -152,37 +152,63 @@ function App() {
               <h2>Analysis Report</h2>
             </div>
 
-            <div className="score">
-              ATS Score: {result.atsScore}%
+            <div className="ats-card">
+              <h3>ATS Match Score</h3>
+
+              <div className="ats-value">
+                {result.atsScore}%
+              </div>
+
+              <p>
+                {result.atsScore >= 80
+                  ? "Excellent resume match."
+                  : result.atsScore >= 60
+                  ? "Good match. Minor improvements suggested."
+                  : "Keep improving your resume."}
+              </p>
             </div>
 
-            <h3>Detected Skills</h3>
+            <div className="report-box green">
+              <h3>Detected Skills</h3>
 
-            <div className="skill-wrap">
-              {result.skills.length > 0
-                ? result.skills.map((skill, i) => (
-                    <span className="skill-chip" key={i}>{skill}</span>
-                  ))
-                : <p>No skills detected</p>}
+              {result.skills.length > 0 ? (
+                <div className="skill-wrap">
+                  {result.skills.map((skill, i) => (
+                    <span className="skill-chip" key={i}>
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p>No skills detected</p>
+              )}
             </div>
 
-            <h3>Missing Skills</h3>
+            <div className="report-box orange">
+              <h3>Missing Skills</h3>
 
-            <div className="skill-wrap">
-              {result.missingSkills.length > 0
-                ? result.missingSkills.map((skill, i) => (
-                    <span className="missing-chip" key={i}>{skill}</span>
-                  ))
-                : <p>No major missing skills</p>}
+              {result.missingSkills.length > 0 ? (
+                <div className="skill-wrap">
+                  {result.missingSkills.map((skill, i) => (
+                    <span className="missing-chip" key={i}>
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p>No major missing skills</p>
+              )}
             </div>
 
-            <h3>Suggestions</h3>
+            <div className="report-box blue">
+              <h3>Suggestions</h3>
 
-            <ul>
-              {result.suggestions.map((s, i) => (
-                <li key={i}>{s}</li>
-              ))}
-            </ul>
+              <ul>
+                {result.suggestions.map((s, i) => (
+                  <li key={i}>{s}</li>
+                ))}
+              </ul>
+            </div>
           </section>
         )}
 
