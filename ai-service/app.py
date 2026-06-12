@@ -10,30 +10,63 @@ SKILLS = [
     "python",
     "java",
     "javascript",
+    "typescript",
     "react",
+    "reactjs",
     "node",
+    "nodejs",
     "express",
+    "expressjs",
     "mongodb",
+    "mysql",
+    "postgresql",
     "sql",
     "html",
     "css",
+    "tailwind",
+    "bootstrap",
     "machine learning",
     "deep learning",
+    "artificial intelligence",
+    "ai",
     "nlp",
     "fastapi",
     "flask",
     "django",
     "git",
+    "github",
     "docker",
+    "kubernetes",
     "aws",
     "azure",
     "data analysis",
     "tensorflow",
     "pytorch",
+    "scikit learn",
+    "rest api",
+    "api",
+    "jwt",
+    "authentication",
     "communication",
     "problem solving",
-    "teamwork"
+    "teamwork",
+    "leadership"
 ]
+
+SKILL_ALIASES = {
+    "reactjs": "react",
+    "react.js": "react",
+    "nodejs": "node",
+    "node.js": "node",
+    "expressjs": "express",
+    "express.js": "express",
+    "js": "javascript",
+    "ml": "machine learning",
+    "ai": "artificial intelligence",
+    "scikit-learn": "scikit learn",
+    "restful api": "rest api",
+    "apis": "api"
+}
 
 class AnalyzeReq(BaseModel):
     resumeText: str
@@ -48,11 +81,16 @@ class EvalReq(BaseModel):
 
 def normalize_text(text):
     text = text.lower()
-    text = text.replace(".js", "")
+
+    for alias, standard in SKILL_ALIASES.items():
+        text = text.replace(alias, standard)
+
+    text = text.replace(".js", "js")
     text = text.replace("-", " ")
     text = text.replace("_", " ")
-    text = re.sub(r"[^a-z0-9\s]", " ", text)
+    text = re.sub(r"[^a-z0-9\s+#]", " ", text)
     text = re.sub(r"\s+", " ", text)
+
     return text.strip()
 
 def extract_skills(text):
@@ -65,7 +103,14 @@ def extract_skills(text):
         if re.search(r"\b" + re.escape(clean_skill) + r"\b", clean_text):
             found_skills.append(skill)
 
-    return sorted(list(set(found_skills)))
+    normalized_found = []
+
+    for skill in found_skills:
+        skill_clean = normalize_text(skill)
+        final_skill = SKILL_ALIASES.get(skill_clean, skill_clean)
+        normalized_found.append(final_skill)
+
+    return sorted(list(set(normalized_found)))
 
 @app.get("/")
 def root():
@@ -76,15 +121,17 @@ def root():
 @app.post("/analyze")
 def analyze(req: AnalyzeReq):
 
-    resume = req.resumeText
-    jd = req.jobDescription
+    resume = req.resumeText or ""
+    jd = req.jobDescription or ""
 
     resume_skills = extract_skills(resume)
     jd_skills = extract_skills(jd)
 
+    resume_skills_lower = [skill.lower() for skill in resume_skills]
+
     missing_skills = [
         skill for skill in jd_skills
-        if skill not in resume_skills
+        if skill.lower() not in resume_skills_lower
     ]
 
     score = 0
@@ -102,9 +149,10 @@ def analyze(req: AnalyzeReq):
         score = int(similarity * 100)
 
     if len(jd_skills) > 0:
+        matched_skills = len(jd_skills) - len(missing_skills)
+
         skill_score = int(
-            ((len(jd_skills) - len(missing_skills))
-            / len(jd_skills)) * 100
+            (matched_skills / len(jd_skills)) * 100
         )
 
         score = int((score + skill_score) / 2)
@@ -119,12 +167,12 @@ def analyze(req: AnalyzeReq):
 
     if len(resume.split()) < 200:
         suggestions.append(
-            "Resume content is short. Add more projects and achievements."
+            "Resume content is short. Add more projects, experience, and achievements."
         )
 
     if not re.search(r"\d+%|\d+\+", resume):
         suggestions.append(
-            "Add measurable achievements and project metrics."
+            "Add measurable achievements such as 40% improvement, 1M+ users, or 25% faster performance."
         )
 
     if not suggestions:
@@ -135,6 +183,7 @@ def analyze(req: AnalyzeReq):
     return {
         "atsScore": max(0, min(score, 100)),
         "skills": resume_skills,
+        "jobSkills": jd_skills,
         "missingSkills": missing_skills,
         "suggestions": suggestions
     }
