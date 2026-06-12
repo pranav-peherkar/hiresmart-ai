@@ -19,7 +19,8 @@ function App() {
     e.preventDefault();
 
     if (!resume || !jd) {
-      return alert('Upload resume and enter job description');
+      alert('Upload resume and enter job description');
+      return;
     }
 
     setLoading(true);
@@ -33,9 +34,9 @@ function App() {
       setResult(res.data);
     } catch (err) {
       alert(err.response?.data?.message || 'Analysis failed. Start backend and AI service.');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   async function startInterview() {
@@ -52,16 +53,20 @@ function App() {
   }
 
   async function evalInterview() {
-    const payload = questions.map((q, i) => ({
-      question: q,
-      answer: answers[i] || ''
-    }));
+    try {
+      const payload = questions.map((q, i) => ({
+        question: q,
+        answer: answers[i] || ''
+      }));
 
-    const res = await axios.post(`${API}/interview/evaluate`, {
-      qa: payload
-    });
+      const res = await axios.post(`${API}/interview/evaluate`, {
+        qa: payload
+      });
 
-    setEvaluation(res.data);
+      setEvaluation(res.data);
+    } catch (e) {
+      alert('Could not evaluate interview');
+    }
   }
 
   return (
@@ -161,17 +166,17 @@ function App() {
 
               <p>
                 {result.atsScore >= 80
-                  ? "Excellent resume match."
+                  ? 'Excellent resume match.'
                   : result.atsScore >= 60
-                  ? "Good match. Minor improvements suggested."
-                  : "Keep improving your resume."}
+                  ? 'Good match. Minor improvements suggested.'
+                  : 'Keep improving your resume.'}
               </p>
             </div>
 
             <div className="report-box green">
               <h3>Detected Skills</h3>
 
-              {result.skills.length > 0 ? (
+              {result.skills && result.skills.length > 0 ? (
                 <div className="skill-wrap">
                   {result.skills.map((skill, i) => (
                     <span className="skill-chip" key={i}>
@@ -187,7 +192,7 @@ function App() {
             <div className="report-box orange">
               <h3>Missing Skills</h3>
 
-              {result.missingSkills.length > 0 ? (
+              {result.missingSkills && result.missingSkills.length > 0 ? (
                 <div className="skill-wrap">
                   {result.missingSkills.map((skill, i) => (
                     <span className="missing-chip" key={i}>
@@ -203,11 +208,15 @@ function App() {
             <div className="report-box blue">
               <h3>Suggestions</h3>
 
-              <ul>
-                {result.suggestions.map((s, i) => (
-                  <li key={i}>{s}</li>
-                ))}
-              </ul>
+              {result.suggestions && result.suggestions.length > 0 ? (
+                <ul>
+                  {result.suggestions.map((s, i) => (
+                    <li key={i}>{s}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No suggestions available</p>
+              )}
             </div>
           </section>
         )}
@@ -253,7 +262,7 @@ function App() {
           )}
 
           {evaluation && (
-            <div>
+            <div className="report-box blue">
               <h3>Interview Score: {evaluation.score}%</h3>
 
               <ul>
