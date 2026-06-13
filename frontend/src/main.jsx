@@ -18,6 +18,33 @@ function App() {
   const [evaluation, setEvaluation] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const totalCandidates = rankings.length;
+
+  const averageAts =
+    rankings.length > 0
+      ? Math.round(rankings.reduce((sum, c) => sum + c.atsScore, 0) / rankings.length)
+      : 0;
+
+  const topCandidate = rankings.length > 0 ? rankings[0] : null;
+
+  const mostMissingSkills = rankings
+    .flatMap(c => c.missingSkills || [])
+    .reduce((acc, skill) => {
+      acc[skill] = (acc[skill] || 0) + 1;
+      return acc;
+    }, {});
+
+  const topMissingSkills = Object.entries(mostMissingSkills)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  const compareA = rankings[0];
+  const compareB = rankings[1];
+
+  function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   async function analyze(e) {
     e.preventDefault();
 
@@ -36,7 +63,7 @@ function App() {
       const res = await axios.post(`${API}/resume/analyze`, fd);
       setResult(res.data);
     } catch (err) {
-      alert(err.response?.data?.message || 'Analysis failed. Start backend and AI service.');
+      alert(err.response?.data?.message || 'Analysis failed. Please try again after some time.');
     } finally {
       setLoading(false);
     }
@@ -60,6 +87,8 @@ function App() {
       const rankingResults = [];
 
       for (const file of resumeFiles) {
+        await delay(1500);
+
         const fd = new FormData();
         fd.append('resume', file);
         fd.append('jobDescription', jd);
@@ -82,7 +111,7 @@ function App() {
       rankingResults.sort((a, b) => b.atsScore - a.atsScore);
       setRankings(rankingResults);
     } catch (err) {
-      alert('Candidate ranking failed. Please try again.');
+      alert('Candidate ranking failed. Too many requests or server busy. Please wait and try again.');
     } finally {
       setLoading(false);
     }
@@ -345,7 +374,54 @@ function App() {
           <section id="ranking" className="card">
             <div className="section-heading">
               <span>Recruiter Intelligence</span>
-              <h2>Candidate Rankings</h2>
+              <h2>Recruiter Dashboard</h2>
+            </div>
+
+            <section className="stats-grid">
+              <div className="stat-card">
+                <h3>{totalCandidates}</h3>
+                <p>Total Candidates</p>
+              </div>
+
+              <div className="stat-card">
+                <h3>{averageAts}%</h3>
+                <p>Average ATS</p>
+              </div>
+
+              <div className="stat-card">
+                <h3 className="recommendation-text">
+                  {topCandidate?.fileName?.replace('.pdf', '') || 'N/A'}
+                </h3>
+                <p>Top Candidate</p>
+              </div>
+
+              <div className="stat-card">
+                <h3 className="recommendation-text">
+                  {topCandidate?.recommendation || 'N/A'}
+                </h3>
+                <p>Best Recommendation</p>
+              </div>
+            </section>
+
+            <div className="report-box orange">
+              <h3>Most Common Missing Skills</h3>
+
+              {topMissingSkills.length > 0 ? (
+                <div className="skill-wrap">
+                  {topMissingSkills.map(([skill, count], i) => (
+                    <span className="missing-chip" key={i}>
+                      {skill} ({count})
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p>No common missing skills found</p>
+              )}
+            </div>
+
+            <div className="section-heading">
+              <span>Candidate Ranking</span>
+              <h2>Ranked Candidates</h2>
             </div>
 
             {rankings.map((candidate, index) => (
@@ -363,6 +439,14 @@ function App() {
                 </h3>
 
                 <p><b>ATS Score:</b> {candidate.atsScore}%</p>
+
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{ width: `${candidate.atsScore}%` }}
+                  ></div>
+                </div>
+
                 <p><b>Skill Match Score:</b> {candidate.skillMatchScore}%</p>
                 <p><b>Experience Level:</b> {candidate.experienceLevel}</p>
                 <p><b>Recommendation:</b> {candidate.recommendation}</p>
@@ -377,6 +461,60 @@ function App() {
                 )}
               </div>
             ))}
+
+            {compareA && compareB && (
+              <div className="report-box green">
+                <h3>Candidate Comparison</h3>
+
+                <table className="comparison-table">
+                  <thead>
+                    <tr>
+                      <th>Metric</th>
+                      <th>{compareA.fileName}</th>
+                      <th>{compareB.fileName}</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    <tr>
+                      <td>ATS Score</td>
+                      <td>{compareA.atsScore}%</td>
+                      <td>{compareB.atsScore}%</td>
+                    </tr>
+
+                    <tr>
+                      <td>Skill Match</td>
+                      <td>{compareA.skillMatchScore}%</td>
+                      <td>{compareB.skillMatchScore}%</td>
+                    </tr>
+
+                    <tr>
+                      <td>Experience Level</td>
+                      <td>{compareA.experienceLevel}</td>
+                      <td>{compareB.experienceLevel}</td>
+                    </tr>
+
+                    <tr>
+                      <td>Recommendation</td>
+                      <td>{compareA.recommendation}</td>
+                      <td>{compareB.recommendation}</td>
+                    </tr>
+
+                    <tr>
+                      <td>Skills Found</td>
+                      <td>{compareA.skillsFound}</td>
+                      <td>{compareB.skillsFound}</td>
+                    </tr>
+
+                    <tr>
+                      <td>Missing Skills</td>
+                      <td>{compareA.missingSkills.length}</td>
+                      <td>{compareB.missingSkills.length}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
           </section>
         )}
 
