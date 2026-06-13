@@ -110,8 +110,8 @@ function App() {
           </div>
 
           <div className="stat-card">
-            <h3>{evaluation ? `${evaluation.score}%` : '0%'}</h3>
-            <p>Interview Score</p>
+            <h3>{result?.hiringRecommendation || 'N/A'}</h3>
+            <p>Hiring Recommendation</p>
           </div>
         </section>
 
@@ -141,7 +141,7 @@ function App() {
             <textarea
               value={jd}
               onChange={e => setJd(e.target.value)}
-              placeholder="Paste job description here..."
+              placeholder="Paste full job description with required skills here..."
             />
 
             <button disabled={loading}>
@@ -171,6 +171,13 @@ function App() {
                   ? 'Good match. Minor improvements suggested.'
                   : 'Keep improving your resume.'}
               </p>
+            </div>
+
+            <div className="report-box blue">
+              <h3>Candidate Overview</h3>
+              <p><b>Experience Level:</b> {result.experienceLevel || 'Not available'}</p>
+              <p><b>Hiring Recommendation:</b> {result.hiringRecommendation || 'Not available'}</p>
+              <p><b>Skill Match Score:</b> {result.skillMatchScore || 0}%</p>
             </div>
 
             <div className="report-box green">
@@ -205,6 +212,34 @@ function App() {
               )}
             </div>
 
+            <div className="report-box green">
+              <h3>Strengths</h3>
+
+              {result.strengths && result.strengths.length > 0 ? (
+                <ul>
+                  {result.strengths.map((s, i) => (
+                    <li key={i}>{s}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No strengths available</p>
+              )}
+            </div>
+
+            <div className="report-box orange">
+              <h3>Weaknesses</h3>
+
+              {result.weaknesses && result.weaknesses.length > 0 ? (
+                <ul>
+                  {result.weaknesses.map((w, i) => (
+                    <li key={i}>{w}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No weaknesses available</p>
+              )}
+            </div>
+
             <div className="report-box blue">
               <h3>Suggestions</h3>
 
@@ -216,6 +251,20 @@ function App() {
                 </ul>
               ) : (
                 <p>No suggestions available</p>
+              )}
+            </div>
+
+            <div className="report-box blue">
+              <h3>Improvement Roadmap</h3>
+
+              {result.improvementRoadmap && result.improvementRoadmap.length > 0 ? (
+                <ol>
+                  {result.improvementRoadmap.map((r, i) => (
+                    <li key={i}>{r}</li>
+                  ))}
+                </ol>
+              ) : (
+                <p>No roadmap available</p>
               )}
             </div>
           </section>

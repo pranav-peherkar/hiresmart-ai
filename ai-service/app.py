@@ -53,6 +53,7 @@ def normalize_text(text):
     text = text.replace(".js", "js")
     text = text.replace("-", " ")
     text = text.replace("_", " ")
+    text = text.replace("htmachine learning", "machine learning")
     text = re.sub(r"[^a-z0-9\s+#]", " ", text)
     text = re.sub(r"\s+", " ", text)
 
