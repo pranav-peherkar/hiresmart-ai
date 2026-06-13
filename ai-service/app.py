@@ -105,6 +105,72 @@ def get_hiring_recommendation(score):
     else:
         return "Not Recommended"
 
+def analyze_resume_sections(resume):
+    text = resume.lower()
+
+    section_analysis = {
+        "contactInformation": bool(
+            re.search(r"\b\d{10}\b", text)
+            or re.search(r"[\w\.-]+@[\w\.-]+\.\w+", text)
+            or "email" in text
+            or "phone" in text
+            or "mobile" in text
+        ),
+        "education": any(word in text for word in [
+            "education", "degree", "bachelor", "master", "b.tech",
+            "b.e", "computer science", "university", "college", "cgpa"
+        ]),
+        "skills": any(word in text for word in [
+            "skills", "technical skills", "programming", "technologies"
+        ]),
+        "projects": any(word in text for word in [
+            "project", "projects", "developed", "built", "created"
+        ]),
+        "experience": any(word in text for word in [
+            "experience", "work experience", "employment", "internship",
+            "software engineer", "developer", "company"
+        ]),
+        "certifications": any(word in text for word in [
+            "certification", "certifications", "certified", "certificate"
+        ]),
+        "linkedin": "linkedin" in text,
+        "github": "github" in text,
+        "achievements": any(word in text for word in [
+            "achievement", "achievements", "award", "winner", "improved",
+            "reduced", "increased"
+        ])
+    }
+
+    present_sections = []
+    missing_sections = []
+
+    labels = {
+        "contactInformation": "Contact Information",
+        "education": "Education",
+        "skills": "Skills",
+        "projects": "Projects",
+        "experience": "Experience",
+        "certifications": "Certifications",
+        "linkedin": "LinkedIn",
+        "github": "GitHub",
+        "achievements": "Achievements"
+    }
+
+    for key, value in section_analysis.items():
+        if value:
+            present_sections.append(labels[key])
+        else:
+            missing_sections.append(labels[key])
+
+    section_score = int((len(present_sections) / len(section_analysis)) * 100)
+
+    return {
+        "sections": section_analysis,
+        "presentSections": present_sections,
+        "missingSections": missing_sections,
+        "sectionScore": section_score
+    }
+
 def generate_strengths(resume, resume_skills, score):
     strengths = []
 
@@ -228,6 +294,9 @@ def analyze(req: AnalyzeReq):
         skill_score = int((matched_skills / len(jd_skills)) * 100)
         score = int((score + skill_score) / 2)
 
+    section_analysis = analyze_resume_sections(resume)
+
+    score = int((score * 0.85) + (section_analysis["sectionScore"] * 0.15))
     score = max(0, min(score, 100))
 
     suggestions = []
@@ -235,6 +304,12 @@ def analyze(req: AnalyzeReq):
     if missing_skills:
         suggestions.append(
             f"Consider adding experience, certifications, or projects related to: {', '.join(missing_skills[:5])}"
+        )
+
+    if section_analysis["missingSections"]:
+        suggestions.append(
+            "Improve resume structure by adding: "
+            + ", ".join(section_analysis["missingSections"][:4])
         )
 
     if score < 50:
@@ -271,6 +346,8 @@ def analyze(req: AnalyzeReq):
     return {
         "atsScore": score,
         "skillMatchScore": skill_score,
+        "sectionScore": section_analysis["sectionScore"],
+        "sectionAnalysis": section_analysis,
         "skills": resume_skills,
         "jobSkills": jd_skills,
         "missingSkills": missing_skills,
@@ -285,6 +362,9 @@ def analyze(req: AnalyzeReq):
 @app.post("/interview/questions")
 def interview_questions(req: QuestionReq):
 
+    role = req.role.lower()
+    skills = [skill.lower() for skill in req.skills]
+
     questions = [
         f"Tell me about yourself for the role of {req.role}.",
         f"Explain one project related to {req.role}.",
@@ -292,6 +372,34 @@ def interview_questions(req: QuestionReq):
         "Describe a challenge you faced and how you solved it.",
         "Why should we hire you?"
     ]
+
+    if "react" in role or "react" in skills:
+        questions.extend([
+            "What are React Hooks?",
+            "Explain the difference between useState and useEffect.",
+            "How do you optimize performance in a React application?"
+        ])
+
+    if "python" in role or "python" in skills:
+        questions.extend([
+            "What is the difference between list, tuple, and dictionary in Python?",
+            "Explain exception handling in Python.",
+            "What are Python decorators?"
+        ])
+
+    if "node" in role or "node" in skills:
+        questions.extend([
+            "What is middleware in Express.js?",
+            "Explain asynchronous programming in Node.js.",
+            "How do you handle authentication in Node.js?"
+        ])
+
+    if "aws" in role or "aws" in skills:
+        questions.extend([
+            "What is the difference between EC2 and S3?",
+            "Explain how you would deploy an application on AWS.",
+            "What is load balancing in cloud deployment?"
+        ])
 
     for skill in req.skills[:3]:
         questions.append(
