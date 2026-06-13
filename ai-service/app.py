@@ -292,7 +292,7 @@ def analyze(req: AnalyzeReq):
     if len(jd_skills) > 0:
         matched_skills = len(jd_skills) - len(missing_skills)
         skill_score = int((matched_skills / len(jd_skills)) * 100)
-        score = int((score + skill_score) / 2)
+        score = int((score * 0.30) + (skill_score * 0.70))
 
     section_analysis = analyze_resume_sections(resume)
 
