@@ -7,50 +7,15 @@ import re
 app = FastAPI(title="HireSmart AI Service")
 
 SKILLS = [
-    "python",
-    "java",
-    "javascript",
-    "typescript",
-    "react",
-    "reactjs",
-    "node",
-    "nodejs",
-    "express",
-    "expressjs",
-    "mongodb",
-    "mysql",
-    "postgresql",
-    "sql",
-    "html",
-    "css",
-    "tailwind",
-    "bootstrap",
-    "machine learning",
-    "deep learning",
-    "artificial intelligence",
-    "ai",
-    "nlp",
-    "fastapi",
-    "flask",
-    "django",
-    "git",
-    "github",
-    "docker",
-    "kubernetes",
-    "aws",
-    "azure",
-    "data analysis",
-    "tensorflow",
-    "pytorch",
-    "scikit learn",
-    "rest api",
-    "api",
-    "jwt",
-    "authentication",
-    "communication",
-    "problem solving",
-    "teamwork",
-    "leadership"
+    "python", "java", "javascript", "typescript", "react", "reactjs",
+    "node", "nodejs", "express", "expressjs", "mongodb", "mysql",
+    "postgresql", "sql", "html", "css", "tailwind", "bootstrap",
+    "machine learning", "deep learning", "artificial intelligence",
+    "ai", "nlp", "fastapi", "flask", "django", "git", "github",
+    "docker", "kubernetes", "aws", "azure", "data analysis",
+    "tensorflow", "pytorch", "scikit learn", "rest api", "api",
+    "jwt", "authentication", "communication", "problem solving",
+    "teamwork", "leadership"
 ]
 
 SKILL_ALIASES = {
@@ -112,6 +77,113 @@ def extract_skills(text):
 
     return sorted(list(set(normalized_found)))
 
+def detect_experience_level(resume):
+    text = resume.lower()
+
+    if re.search(r"5\+?\s*years|five years|senior", text):
+        return "Senior Level"
+
+    if re.search(r"3\+?\s*years|4\+?\s*years|mid level", text):
+        return "Mid-Level"
+
+    if re.search(r"1\+?\s*year|2\+?\s*years|junior", text):
+        return "Junior Level"
+
+    if "internship" in text or "intern" in text or "fresher" in text:
+        return "Fresher"
+
+    return "Entry Level"
+
+def get_hiring_recommendation(score):
+    if score >= 85:
+        return "Strong Hire"
+    elif score >= 70:
+        return "Hire"
+    elif score >= 50:
+        return "Consider"
+    else:
+        return "Not Recommended"
+
+def generate_strengths(resume, resume_skills, score):
+    strengths = []
+
+    if len(resume_skills) >= 8:
+        strengths.append("Strong technical skill set")
+
+    if "github" in resume.lower():
+        strengths.append("GitHub profile or project links available")
+
+    if "linkedin" in resume.lower():
+        strengths.append("LinkedIn profile available")
+
+    if re.search(r"\d+%|\d+\+", resume):
+        strengths.append("Contains measurable achievements")
+
+    if "project" in resume.lower():
+        strengths.append("Project experience mentioned")
+
+    if score >= 70:
+        strengths.append("Good match with the job description")
+
+    if not strengths:
+        strengths.append("Basic resume structure is present")
+
+    return strengths
+
+def generate_weaknesses(resume, missing_skills):
+    weaknesses = []
+
+    if missing_skills:
+        weaknesses.append(
+            "Missing important job skills: " + ", ".join(missing_skills[:5])
+        )
+
+    if len(resume.split()) < 200:
+        weaknesses.append("Resume content is short")
+
+    if "github" not in resume.lower():
+        weaknesses.append("GitHub profile is missing")
+
+    if "linkedin" not in resume.lower():
+        weaknesses.append("LinkedIn profile is missing")
+
+    if not re.search(r"\d+%|\d+\+", resume):
+        weaknesses.append("Measurable achievements are missing")
+
+    if "certification" not in resume.lower() and "certified" not in resume.lower():
+        weaknesses.append("Certifications are not mentioned")
+
+    if not weaknesses:
+        weaknesses.append("No major weaknesses found")
+
+    return weaknesses
+
+def generate_roadmap(missing_skills, resume):
+    roadmap = []
+
+    if missing_skills:
+        roadmap.append(
+            "Add projects or practical experience related to: "
+            + ", ".join(missing_skills[:5])
+        )
+
+    if "github" not in resume.lower():
+        roadmap.append("Add GitHub profile with live project repositories")
+
+    if "linkedin" not in resume.lower():
+        roadmap.append("Add LinkedIn profile for professional visibility")
+
+    if not re.search(r"\d+%|\d+\+", resume):
+        roadmap.append("Add measurable results like 30% improvement or 500+ users")
+
+    if len(resume.split()) < 200:
+        roadmap.append("Expand resume with more projects, internships, and achievements")
+
+    if not roadmap:
+        roadmap.append("Resume is strong. Keep tailoring it for each job description")
+
+    return roadmap
+
 @app.get("/")
 def root():
     return {
@@ -148,14 +220,14 @@ def analyze(req: AnalyzeReq):
 
         score = int(similarity * 100)
 
+    skill_score = 0
+
     if len(jd_skills) > 0:
         matched_skills = len(jd_skills) - len(missing_skills)
-
-        skill_score = int(
-            (matched_skills / len(jd_skills)) * 100
-        )
-
+        skill_score = int((matched_skills / len(jd_skills)) * 100)
         score = int((score + skill_score) / 2)
+
+    score = max(0, min(score, 100))
 
     suggestions = []
 
@@ -166,7 +238,7 @@ def analyze(req: AnalyzeReq):
 
     if score < 50:
         suggestions.append(
-            "Low match with the job description. Customize your resume to better align with the required skills and responsibilities."
+            "Low match with the job description. Customize your resume to better align with the required skills."
         )
 
     elif score < 75:
@@ -189,22 +261,24 @@ def analyze(req: AnalyzeReq):
             "Add measurable achievements such as 'Improved efficiency by 30%' or 'Served 500+ customers monthly'."
         )
 
-    if "github" not in resume.lower():
-        suggestions.append(
-            "Add your GitHub profile or project links to strengthen your technical profile."
-        )
-
-    if "linkedin" not in resume.lower():
-        suggestions.append(
-            "Add your LinkedIn profile to improve professional visibility."
-        )
+    experience_level = detect_experience_level(resume)
+    hiring_recommendation = get_hiring_recommendation(score)
+    strengths = generate_strengths(resume, resume_skills, score)
+    weaknesses = generate_weaknesses(resume, missing_skills)
+    improvement_roadmap = generate_roadmap(missing_skills, resume)
 
     return {
-        "atsScore": max(0, min(score, 100)),
+        "atsScore": score,
+        "skillMatchScore": skill_score,
         "skills": resume_skills,
         "jobSkills": jd_skills,
         "missingSkills": missing_skills,
-        "suggestions": suggestions
+        "suggestions": suggestions,
+        "strengths": strengths,
+        "weaknesses": weaknesses,
+        "experienceLevel": experience_level,
+        "hiringRecommendation": hiring_recommendation,
+        "improvementRoadmap": improvement_roadmap
     }
 
 @app.post("/interview/questions")
