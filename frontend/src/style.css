@@ -441,3 +441,20 @@ li {
 .blue {
   border-left: 5px solid #6366f1;
 }
+.stat-card h3 {
+  font-size: clamp(28px, 4vw, 64px);
+  line-height: 1.1;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.stat-card {
+  overflow: hidden;
+}
+.recommendation-text {
+  font-size: clamp(26px, 3vw, 44px) !important;
+  line-height: 1.1;
+  word-break: break-word;
+  text-align: center;
+}

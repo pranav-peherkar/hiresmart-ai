@@ -110,7 +110,8 @@ function App() {
           </div>
 
           <div className="stat-card">
-            <h3>{result?.hiringRecommendation || 'N/A'}</h3>
+            <h3 className="recommendation-text">
+              {result?.hiringRecommendation || 'N/A'}</h3>
             <p>Hiring Recommendation</p>
           </div>
         </section>
