@@ -161,23 +161,42 @@ def analyze(req: AnalyzeReq):
 
     if missing_skills:
         suggestions.append(
-            "Add these missing skills: "
-            + ", ".join(missing_skills)
+            f"Consider adding experience, certifications, or projects related to: {', '.join(missing_skills[:5])}"
+        )
+
+    if score < 50:
+        suggestions.append(
+            "Low match with the job description. Customize your resume to better align with the required skills and responsibilities."
+        )
+
+    elif score < 75:
+        suggestions.append(
+            "Moderate match. Add more relevant technical skills, projects, and work experience."
+        )
+
+    else:
+        suggestions.append(
+            "Strong match with the job description. Focus on highlighting achievements and measurable impact."
         )
 
     if len(resume.split()) < 200:
         suggestions.append(
-            "Resume content is short. Add more projects, experience, and achievements."
+            "Resume content is short. Add more projects, internships, certifications, or professional experience."
         )
 
     if not re.search(r"\d+%|\d+\+", resume):
         suggestions.append(
-            "Add measurable achievements such as 40% improvement, 1M+ users, or 25% faster performance."
+            "Add measurable achievements such as 'Improved efficiency by 30%' or 'Served 500+ customers monthly'."
         )
 
-    if not suggestions:
+    if "github" not in resume.lower():
         suggestions.append(
-            "Resume is well aligned with the job description."
+            "Add your GitHub profile or project links to strengthen your technical profile."
+        )
+
+    if "linkedin" not in resume.lower():
+        suggestions.append(
+            "Add your LinkedIn profile to improve professional visibility."
         )
 
     return {
