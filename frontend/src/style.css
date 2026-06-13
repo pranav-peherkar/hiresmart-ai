@@ -458,3 +458,38 @@ li {
   word-break: break-word;
   text-align: center;
 }
+.progress-bar {
+  width: 100%;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 10px 0 15px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #14b8a6);
+  border-radius: 999px;
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.comparison-table th,
+.comparison-table td {
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  text-align: left;
+}
+
+.comparison-table th {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.comparison-table td {
+  color: #e5e7eb;
+}
