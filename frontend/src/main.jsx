@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import axios from 'axios';
+import { jsPDF } from 'jspdf';
 import './style.css';
 
 const API = "https://hiresmart-backend-90jm.onrender.com/api";
@@ -69,6 +70,75 @@ function App() {
     }
   }
 
+  function addPdfSection(doc, title, items, y) {
+    if (y > 260) {
+      doc.addPage();
+      y = 20;
+    }
+
+    doc.setFontSize(14);
+    doc.text(title, 20, y);
+    y += 8;
+
+    doc.setFontSize(10);
+
+    if (!items || items.length === 0) {
+      doc.text('Not available', 25, y);
+      return y + 10;
+    }
+
+    items.forEach((item) => {
+      const lines = doc.splitTextToSize(`• ${item}`, 165);
+
+      if (y + lines.length * 6 > 280) {
+        doc.addPage();
+        y = 20;
+      }
+
+      doc.text(lines, 25, y);
+      y += lines.length * 6 + 3;
+    });
+
+    return y + 5;
+  }
+
+  function downloadReport() {
+    if (!result) {
+      alert('Analyze a resume first.');
+      return;
+    }
+
+    const doc = new jsPDF();
+    let y = 20;
+
+    doc.setFontSize(20);
+    doc.text('HireSmart AI Resume Analysis Report', 20, y);
+
+    y += 12;
+
+    doc.setFontSize(11);
+    doc.text(`Generated For: ${resume?.name || 'Candidate Resume'}`, 20, y);
+    y += 8;
+    doc.text(`ATS Score: ${result.atsScore || 0}%`, 20, y);
+    y += 8;
+    doc.text(`Skill Match Score: ${result.skillMatchScore || 0}%`, 20, y);
+    y += 8;
+    doc.text(`Experience Level: ${result.experienceLevel || 'Not available'}`, 20, y);
+    y += 8;
+    doc.text(`Hiring Recommendation: ${result.hiringRecommendation || 'Not available'}`, 20, y);
+
+    y += 14;
+
+    y = addPdfSection(doc, 'Detected Skills', result.skills || [], y);
+    y = addPdfSection(doc, 'Missing Skills', result.missingSkills || ['No major missing skills'], y);
+    y = addPdfSection(doc, 'Suggestions', result.suggestions || [], y);
+    y = addPdfSection(doc, 'Strengths', result.strengths || [], y);
+    y = addPdfSection(doc, 'Weaknesses', result.weaknesses || [], y);
+    y = addPdfSection(doc, 'Improvement Roadmap', result.improvementRoadmap || [], y);
+
+    doc.save('HireSmart_AI_Report.pdf');
+  }
+
   return (
     <div className="app">
 
@@ -111,7 +181,8 @@ function App() {
 
           <div className="stat-card">
             <h3 className="recommendation-text">
-              {result?.hiringRecommendation || 'N/A'}</h3>
+              {result?.hiringRecommendation || 'N/A'}
+            </h3>
             <p>Hiring Recommendation</p>
           </div>
         </section>
@@ -155,7 +226,22 @@ function App() {
           <section className="card">
             <div className="section-heading">
               <span>AI Generated Report</span>
-              <h2>Analysis Report</h2>
+
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '15px',
+                  flexWrap: 'wrap'
+                }}
+              >
+                <h2>Analysis Report</h2>
+
+                <button type="button" onClick={downloadReport}>
+                  Download PDF Report
+                </button>
+              </div>
             </div>
 
             <div className="ats-card">
