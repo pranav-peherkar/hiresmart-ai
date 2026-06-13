@@ -8,6 +8,8 @@ const API = "https://hiresmart-backend-90jm.onrender.com/api";
 
 function App() {
   const [resume, setResume] = useState(null);
+  const [resumeFiles, setResumeFiles] = useState([]);
+  const [rankings, setRankings] = useState([]);
   const [jd, setJd] = useState('');
   const [result, setResult] = useState(null);
   const [role, setRole] = useState('Software Engineer');
@@ -35,6 +37,52 @@ function App() {
       setResult(res.data);
     } catch (err) {
       alert(err.response?.data?.message || 'Analysis failed. Start backend and AI service.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function rankCandidates() {
+    if (!jd) {
+      alert('Enter job description first');
+      return;
+    }
+
+    if (resumeFiles.length < 2) {
+      alert('Upload at least 2 resumes to rank candidates');
+      return;
+    }
+
+    setLoading(true);
+    setRankings([]);
+
+    try {
+      const rankingResults = [];
+
+      for (const file of resumeFiles) {
+        const fd = new FormData();
+        fd.append('resume', file);
+        fd.append('jobDescription', jd);
+
+        const res = await axios.post(`${API}/resume/analyze`, fd);
+
+        rankingResults.push({
+          fileName: file.name,
+          atsScore: res.data.atsScore,
+          skillMatchScore: res.data.skillMatchScore,
+          recommendation: res.data.hiringRecommendation,
+          experienceLevel: res.data.experienceLevel,
+          skillsFound: res.data.skills?.length || 0,
+          missingSkills: res.data.missingSkills || [],
+          strengths: res.data.strengths || [],
+          weaknesses: res.data.weaknesses || []
+        });
+      }
+
+      rankingResults.sort((a, b) => b.atsScore - a.atsScore);
+      setRankings(rankingResults);
+    } catch (err) {
+      alert('Candidate ranking failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -204,11 +252,12 @@ function App() {
           <h1>HireSmart AI</h1>
 
           <p>
-            Intelligent Resume Screening & AI Interview Evaluation System using NLP and Machine Learning.
+            Intelligent Resume Screening, Candidate Ranking & AI Interview Evaluation System.
           </p>
 
           <div className="hero-buttons">
             <a href="#resume" className="primary-btn">Analyze Resume</a>
+            <a href="#ranking" className="secondary-btn">Rank Candidates</a>
             <a href="#interview" className="secondary-btn">Start AI Interview</a>
           </div>
         </div>
@@ -254,12 +303,19 @@ function App() {
             <div className="upload-box">
               <input
                 type="file"
+                multiple
                 accept=".pdf,.txt"
-                onChange={e => setResume(e.target.files[0])}
+                onChange={e => {
+                  const files = [...e.target.files];
+                  setResumeFiles(files);
+                  setResume(files[0] || null);
+                }}
               />
 
               <p>
-                {resume ? resume.name : 'Choose your resume file'}
+                {resumeFiles.length > 0
+                  ? `${resumeFiles.length} file(s) selected`
+                  : 'Choose one or more resume files'}
               </p>
             </div>
 
@@ -272,10 +328,57 @@ function App() {
             />
 
             <button disabled={loading}>
-              {loading ? 'Analyzing Resume...' : 'Analyze Resume'}
+              {loading ? 'Analyzing Resume...' : 'Analyze First Resume'}
+            </button>
+
+            <button
+              type="button"
+              onClick={rankCandidates}
+              disabled={loading}
+            >
+              {loading ? 'Ranking Candidates...' : 'Rank Candidates'}
             </button>
           </form>
         </section>
+
+        {rankings.length > 0 && (
+          <section id="ranking" className="card">
+            <div className="section-heading">
+              <span>Recruiter Intelligence</span>
+              <h2>Candidate Rankings</h2>
+            </div>
+
+            {rankings.map((candidate, index) => (
+              <div className="report-box blue" key={index}>
+                <h3>
+                  {index === 0
+                    ? '🥇'
+                    : index === 1
+                    ? '🥈'
+                    : index === 2
+                    ? '🥉'
+                    : `#${index + 1}`}
+                  {' '}
+                  {candidate.fileName}
+                </h3>
+
+                <p><b>ATS Score:</b> {candidate.atsScore}%</p>
+                <p><b>Skill Match Score:</b> {candidate.skillMatchScore}%</p>
+                <p><b>Experience Level:</b> {candidate.experienceLevel}</p>
+                <p><b>Recommendation:</b> {candidate.recommendation}</p>
+                <p><b>Skills Found:</b> {candidate.skillsFound}</p>
+
+                {candidate.missingSkills.length > 0 ? (
+                  <p>
+                    <b>Missing Skills:</b> {candidate.missingSkills.slice(0, 6).join(', ')}
+                  </p>
+                ) : (
+                  <p><b>Missing Skills:</b> No major missing skills</p>
+                )}
+              </div>
+            ))}
+          </section>
+        )}
 
         {result && (
           <section className="card">
@@ -320,7 +423,32 @@ function App() {
               <p><b>Experience Level:</b> {result.experienceLevel || 'Not available'}</p>
               <p><b>Hiring Recommendation:</b> {result.hiringRecommendation || 'Not available'}</p>
               <p><b>Skill Match Score:</b> {result.skillMatchScore || 0}%</p>
+              <p><b>Resume Section Score:</b> {result.sectionScore || 0}%</p>
             </div>
+
+            {result.sectionAnalysis && (
+              <div className="report-box green">
+                <h3>Resume Section Analysis</h3>
+
+                <p><b>Present Sections:</b></p>
+                <div className="skill-wrap">
+                  {result.sectionAnalysis.presentSections?.map((section, i) => (
+                    <span className="skill-chip" key={i}>
+                      ✓ {section}
+                    </span>
+                  ))}
+                </div>
+
+                <p><b>Missing Sections:</b></p>
+                <div className="skill-wrap">
+                  {result.sectionAnalysis.missingSections?.map((section, i) => (
+                    <span className="missing-chip" key={i}>
+                      ✗ {section}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="report-box green">
               <h3>Detected Skills</h3>
