@@ -35,7 +35,7 @@ app.post('/api/chatbot', async (req, res) => {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash'
+      model: 'gemini-1.5-flash-latest'
     });
 
     const prompt = `
@@ -53,7 +53,12 @@ Help users with:
 Keep answers short, clear, and practical.
 
 Current resume analysis context:
-${analysis ? JSON.stringify(analysis, null, 2) : 'No resume analysis available'}
+${analysis ? JSON.stringify({
+  atsScore: analysis.resumeAnalysis?.atsScore,
+  missingSkills: analysis.resumeAnalysis?.missingSkills,
+  recommendation: analysis.resumeAnalysis?.hiringRecommendation,
+  experienceLevel: analysis.resumeAnalysis?.experienceLevel
+}) : 'No resume analysis available'}
 
 User question:
 ${message}
