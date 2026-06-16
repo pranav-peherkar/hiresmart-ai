@@ -141,15 +141,21 @@ function App() {
     setChatLoading(true);
 
     try {
-      const res = await axios.post(`${API}/chatbot`, {
-        message: userMessage,
-        analysis: {
-          resumeAnalysis: result,
-          candidateRankings: rankings,
-          jobDescription: jd,
-          interviewScore: evaluation
+      const res = await axios.post(
+        `${API}/chatbot`,
+        {
+          message: userMessage,
+          analysis: {
+            resumeAnalysis: result,
+            candidateRankings: rankings,
+            jobDescription: jd,
+            interviewScore: evaluation
+          }
+        },
+        {
+          timeout: 12000
         }
-      });
+      );
 
       setChatMessages(prev => [
         ...prev,
@@ -163,7 +169,13 @@ function App() {
         ...prev,
         {
           sender: 'bot',
-          text: 'Chatbot is currently unavailable. Please check backend deployment and Gemini API key.'
+          text: result
+            ? `Based on the current analysis, ATS Score is ${result.atsScore}%. Missing skills are: ${
+                result.missingSkills?.length
+                  ? result.missingSkills.join(', ')
+                  : 'No major missing skills'
+              }. Recommendation: ${result.hiringRecommendation}.`
+            : 'Gemini is taking too long or quota is unavailable. You can still analyze resumes, view missing skills, get suggestions, rank candidates, compare candidates, and download PDF reports.'
         }
       ]);
     } finally {
