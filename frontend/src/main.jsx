@@ -18,6 +18,16 @@ function App() {
   const [evaluation, setEvaluation] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatMessages, setChatMessages] = useState([
+    {
+      sender: 'bot',
+      text: 'Hi, I am HireSmart AI Assistant. Ask me about ATS score, missing skills, resume improvement, candidate ranking, or interview preparation.'
+    }
+  ]);
+
   const totalCandidates = rankings.length;
 
   const averageAts =
@@ -114,6 +124,56 @@ function App() {
       alert('Candidate ranking failed. Too many requests or server busy. Please wait and try again.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function sendChatMessage() {
+    if (!chatInput.trim()) return;
+
+    const userMessage = chatInput.trim();
+
+    setChatMessages(prev => [
+      ...prev,
+      { sender: 'user', text: userMessage }
+    ]);
+
+    setChatInput('');
+    setChatLoading(true);
+
+    try {
+      const res = await axios.post(`${API}/chatbot`, {
+        message: userMessage,
+        analysis: {
+          resumeAnalysis: result,
+          candidateRankings: rankings,
+          jobDescription: jd,
+          interviewScore: evaluation
+        }
+      });
+
+      setChatMessages(prev => [
+        ...prev,
+        {
+          sender: 'bot',
+          text: res.data.reply || 'Sorry, I could not generate a response.'
+        }
+      ]);
+    } catch (err) {
+      setChatMessages(prev => [
+        ...prev,
+        {
+          sender: 'bot',
+          text: 'Chatbot is currently unavailable. Please check backend deployment and Gemini API key.'
+        }
+      ]);
+    } finally {
+      setChatLoading(false);
+    }
+  }
+
+  function handleChatKeyDown(e) {
+    if (e.key === 'Enter') {
+      sendChatMessage();
     }
   }
 
@@ -738,6 +798,58 @@ function App() {
           Developed by <span>Pranav Peherkar</span>
         </p>
       </footer>
+
+      <button
+        className="chatbot-button"
+        onClick={() => setChatOpen(!chatOpen)}
+      >
+        💬
+      </button>
+
+      {chatOpen && (
+        <div className="chatbot-box">
+          <div className="chatbot-header">
+            <div>
+              <h3>HireSmart AI Assistant</h3>
+              <p>Resume & recruitment chatbot</p>
+            </div>
+
+            <button onClick={() => setChatOpen(false)}>
+              ✕
+            </button>
+          </div>
+
+          <div className="chatbot-messages">
+            {chatMessages.map((msg, i) => (
+              <div
+                key={i}
+                className={msg.sender === 'user' ? 'chat-user' : 'chat-bot'}
+              >
+                {msg.text}
+              </div>
+            ))}
+
+            {chatLoading && (
+              <div className="chat-bot">
+                Thinking...
+              </div>
+            )}
+          </div>
+
+          <div className="chatbot-input">
+            <input
+              value={chatInput}
+              onChange={e => setChatInput(e.target.value)}
+              onKeyDown={handleChatKeyDown}
+              placeholder="Ask about ATS, skills, interview..."
+            />
+
+            <button onClick={sendChatMessage}>
+              Send
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );
