@@ -497,7 +497,8 @@ li {
 .chatbot-container {
   position: fixed;
   right: 24px;
-  bottom: 24px;
+  top: 65%;
+  transform: translateY(-50%);
   z-index: 9999;
 }
 
@@ -511,6 +512,9 @@ li {
   background: linear-gradient(135deg, #22c55e, #14b8a6);
   color: white;
   box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .chatbot-box {
@@ -540,11 +544,14 @@ li {
 }
 
 .chatbot-header button {
+  margin-top: 0;
   background: transparent;
   color: white;
   font-size: 22px;
   border: none;
   cursor: pointer;
+  box-shadow: none;
+  padding: 0;
 }
 
 .chatbot-messages {
@@ -591,10 +598,24 @@ li {
 }
 
 .chatbot-input button {
+  margin-top: 0;
   padding: 10px 14px;
   border-radius: 10px;
   border: none;
   cursor: pointer;
   background: #22c55e;
   color: white;
+  box-shadow: none;
+}
+
+@media (max-width: 768px) {
+  .chatbot-container {
+    right: 16px;
+    top: 70%;
+  }
+
+  .chatbot-box {
+    width: 300px;
+    height: 420px;
+  }
 }
